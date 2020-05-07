@@ -1,6 +1,8 @@
 """
 La sonde va aller inspecter, importer et modifier a la volée un certain nombre de module avec d'enregister les appels
 
+Use case: we have code with no test. What we want is to probe the code for later unittest/pytest generation
+
 """
 
 from functools import wraps
@@ -9,28 +11,38 @@ from collections import defaultdict
 from pprint import pformat
 import inspect
 
-code_report = defaultdict(list)
+code_report = defaultdict(list)  # Simple code reporter for dev
+
+
+def listattr(something):
+    """Returns public/classic attributeof the givent object """
+    return [var for var in dir(something) if not var.startswith("_")]
 
 
 def sonder_module(nom_module: str):
+    """ This functions scans a module for callables:
+        will patch them so as to record I/O for later use
+    """
     print(f"import de {nom_module}")
     module = import_module(nom_module)
     print(module)
-    import ipdb
 
-    elements_names = [var for var in dir(module) if not var.startswith("_")]
+    elements_names = listattr(module)
     for name in elements_names:
-
         element = getattr(module, name)
         if callable(element):
             print(f"{element} est callable on l'ajoute")
             sondee = sonder_vers(code_report)(element)
             setattr(module, name, sondee)
-        if inspect.isclass(element):
-            import ipdb
 
-            ipdb.set_trace()
-    pass
+        if inspect.isclass(element):
+
+            attributes = listattr(element)
+            for name in attributes:
+                target = getattr(element, name)
+                if callable(target):
+                    sondee = sonder_vers(code_report)(target)
+                    setattr(element, name, sondee)
 
 
 def sonder_vers(report: dict):
@@ -49,9 +61,12 @@ def sonder_vers(report: dict):
 
 sonder_module("code")
 
-from code import mafonction
+from code import mafonction, UneClasse
 
 mafonction(1, 2)
+moninstance = UneClasse(1)
+moninstance.uncalcul(3)
+
 
 print(pformat(dict(code_report)))
 
