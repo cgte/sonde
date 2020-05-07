@@ -12,9 +12,9 @@ from pprint import pformat
 import inspect
 from typing import List, Dict
 
-code_report = defaultdict(
-    list
-)  # Simple code reporter for dev, this would be a persitent thing.
+
+# Simple code reporter for dev, this would be a persitent thing.
+code_report = defaultdict(list)
 
 
 def listattr(something):
