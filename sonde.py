@@ -12,7 +12,9 @@ from pprint import pformat
 import inspect
 from typing import List, Dict
 
-code_report = defaultdict(list)  # Simple code reporter for dev
+code_report = defaultdict(
+    list
+)  # Simple code reporter for dev, this would be a persitent thing.
 
 
 def listattr(something):
@@ -53,6 +55,10 @@ def sonder_vers(report: Dict[List]):
     def ajouter_sonde(func: callable):
         @wraps(func)
         def sondee(*args, **kwargs):
+            """ Process computaiton and records input and ouputs
+            This is ok for a poc but using signatures and inspect would be much better
+            """
+
             echantillon = (func.__qualname__, repr(args), repr(kwargs))
             res = func(*args, **kwargs)
             report[echantillon].append(res)
