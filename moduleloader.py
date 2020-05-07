@@ -132,8 +132,10 @@ class Loader(object):
             print(f"\nadded {self._callables - before} \n")
 
 
-def test_tdd():
-    from pprint import pprint
+from pprint import pprint
+
+
+def test_tdd_base():
 
     print = pprint
     from code import UneClasse
@@ -158,6 +160,11 @@ def test_tdd():
         ]
     )
 
+
+def test_tdd_discover_given_dir():
+
+    loader = Loader()
+
     loader.discover(["some"])  # ['.'] is buggy
     print("Callables")
     print(loader._callables)
@@ -180,7 +187,10 @@ def test_tdd():
 
     assert found == []
 
-    loader.discover(["."])  # ['.'] is buggy
+
+def test_tdd_discover_current_dir():
+    loader = Loader()
+    loader.discover(["."])
 
     '''
 
