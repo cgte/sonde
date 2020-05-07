@@ -92,7 +92,7 @@ class Loader(object):
             for qmethodname, method in self.getMethodsFromClass(class_):
                 self._callables.add((f"{modname}.{qmethodname}", method))
 
-    def discover(self, targets: list):
+    def discover(self, targets: list, exclude: list=[]):
         print("\n")
         from importlib import import_module
         from pkgutil import walk_packages
@@ -100,17 +100,22 @@ class Loader(object):
 
         modules = list(walk_packages(targets))
         
-        for module in modules:
+        for finder, module, ispkg in modules:
             before = copy(self._callables)
 
             print(f"Found : {module}")
-            if module.ispkg:
-                module_path = f"{module.module_finder.path}.{module.name}"
-                module_obj = import_module(module_path)
-                print(f"processing {module_obj}")
-            else:
-                print(f"Not processing {module} now ")
-                continue
+            
+            if finder.path:
+                module = f'{finder.path}.{module}'
+
+            try:
+                module_obj = import_module(module)
+            except:
+                import ipdb; ipdb.set_trace()
+                pass
+                pass
+            pass
+            
             
             self.loadModule(module_obj)
             
@@ -137,16 +142,22 @@ def test_tdd():
                                                 ('code.UneClasse.uncalcul', UneClasse.uncalcul )])
     
 
-    loader.discover(['some'])
+    
+    loader.discover(['some']) # ['.'] is buggy
     print("Callables")
     print(loader._callables)
     print("End")
     #Todo
-    wanted_names = ['some.somecode.somefunction', 'some.somecode.Someclass', 'some.somecode.Someclass.method', 'some.pack.Pack']
+    wanted_names = ['some.somecode.somefunction', 'some.somecode.SomeClass', 'some.somecode.SomeClass.method', 'some.pack.Pack',
+                    'code.UneClasse.uncalcul', 'code.mafonction', 'code.UneClasse']
+    
     found = [x[0] for x in loader._callables]
     for name in wanted_names:
-        print( name in found)
-    print(found)
+        assert name in found
+        found.remove(name)
+
+    assert found == []
+    
     '''
 
 
