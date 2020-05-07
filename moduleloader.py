@@ -14,8 +14,6 @@ class Loader(object):
     and returning them in a list
     """
 
-    _top_level_dir = None
-
     def __init__(self):
         super(Loader, self).__init__()
         self.errors = []
@@ -45,11 +43,18 @@ class Loader(object):
             if not methodname.startswith("__"):
                 method = getattr(class_, methodname)
                 if callable(method):
-                    res.append((method.__qualname__, method))
+                    qname = method.__qualname__
+                    print(f"adding {qname}")
+                    if "dict" in qname:
+                        import ipdb
+
+                        ipdb.set_trace()
+                    res.append((qname, method))
         return res
 
     def getClassesFromModule(self, module, pattern=None):
         """Return a suite of all test cases contained in the given module"""
+
         self._modules.add(module.__name__)
         classes = []
         for name in dir(module):
@@ -57,7 +62,13 @@ class Loader(object):
             if isinstance(obj, type):
                 if __builtins__.get(obj.__name__, None) == obj:
                     continue
+                if obj.__module__ not in self._modules:
+                    print(
+                        f"Skipping {obj} since {obj.__module__} is not in the monitored modules {self._modules}"
+                    )
+                    continue
                 if pattern is None:
+
                     classes.append((obj.__qualname__, obj))
                 else:
                     raise NotImplementedError("Not implemented yet")
@@ -80,6 +91,7 @@ class Loader(object):
                 if __builtins__.get(obj.__name__, None) == obj:
                     continue
                 if pattern is None:
+                    print(f"adding {obj.__qualname__}")
                     callables.append((obj.__qualname__, obj))
                 else:
                     raise NotImplementedError("Not implemented yet")
@@ -113,7 +125,9 @@ class Loader(object):
 
         for finder, module, ispkg in modules:
             before = copy(self._callables)
-
+            if module == __name__:
+                # Do not instrospect self
+                continue
             print(f"processing: {module}")
 
             if finder.path and finder.path != ".":
@@ -196,6 +210,10 @@ def test_tdd_discover_current_dir():
         "code.UneClasse.uncalcul",
         "code.mafonction",
         "code.UneClasse",
+        "prober.sonder_module",
+        "prober.sonder_vers",
+        "prober.somme",
+        "prober.listattr",
     ]
     found = [x[0] for x in loader._callables]
     for name in expected:
