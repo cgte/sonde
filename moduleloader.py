@@ -1,4 +1,4 @@
-"""Loads available python modules from directory 
+"""Loads available python modules from directory
 This is copy-paste-strip from unitest.loader
 
 
@@ -6,6 +6,7 @@ This is copy-paste-strip from unitest.loader
 import types
 import functools
 import inspect
+
 
 class Loader(object):
     """
@@ -35,14 +36,13 @@ class Loader(object):
         methods = self.getMethodsFromClass(class_)
         for name, method in methods:
             self._methodnames.add(name)
-        
-        return methods 
 
-    
+        return methods
+
     def getMethodsFromClass(self, class_):
         res = []
         for methodname in dir(class_):
-            if not methodname.startswith('__'):
+            if not methodname.startswith("__"):
                 method = getattr(class_, methodname)
                 if callable(method):
                     res.append((method.__qualname__, method))
@@ -57,43 +57,43 @@ class Loader(object):
             if isinstance(obj, type):
                 if __builtins__.get(obj.__name__, None) == obj:
                     continue
-                if  pattern is None:
+                if pattern is None:
                     classes.append((obj.__qualname__, obj))
                 else:
-                    raise NotImplementedError("Not implemented yet") 
-                    #Maybe we only want to probe some kind of functions 
+                    raise NotImplementedError("Not implemented yet")
+                    # Maybe we only want to probe some kind of functions
         return classes
-    
+
     def getCallablesFromModule(self, module, pattern=None):
         """Return a suite of all test cases contained in the given module"""
 
         callables = []
         for name in dir(module):
-            
+
             obj = getattr(module, name)
             if callable(obj):
                 if __builtins__.get(obj.__name__, None) == obj:
                     continue
-                if  pattern is None:
-                    callables.append((obj.__qualname__, obj)) 
+                if pattern is None:
+                    callables.append((obj.__qualname__, obj))
                 else:
-                    raise NotImplementedError("Not implemented yet") 
-                    #Maybe we only want to probe some kind of functions 
+                    raise NotImplementedError("Not implemented yet")
+                    # Maybe we only want to probe some kind of functions
         return callables
 
     def loadModule(self, module):
         modname = module.__name__
 
-        #TODO: load callables
+        # TODO: load callables
         for name, callable_ in self.getCallablesFromModule(module):
             self._callables.add((f"{modname}.{name}", callable_))
 
-        #TODO: load classes method 
+        # TODO: load classes method
         for _, class_ in self.getClassesFromModule(module):
             for qmethodname, method in self.getMethodsFromClass(class_):
                 self._callables.add((f"{modname}.{qmethodname}", method))
 
-    def discover(self, targets: list, exclude: list=[]):
+    def discover(self, targets: list, exclude: list = []):
         print("\n")
         from importlib import import_module
         from pkgutil import walk_packages
@@ -110,60 +110,73 @@ class Loader(object):
             before = copy(self._callables)
 
             print(f"Found : {module}")
-            
+
             if finder.path:
-                module = f'{finder.path}.{module}'
+                module = f"{finder.path}.{module}"
 
             try:
                 module_obj = import_module(module)
             except:
-                import ipdb; ipdb.set_trace()
+                import ipdb
+
+                ipdb.set_trace()
                 pass
                 pass
             pass
-            
-            
-            self.loadModule(module_obj)
-            
-            print(f"\nadded {self._callables - before} \n")
 
-         
+            self.loadModule(module_obj)
+
+            print(f"\nadded {self._callables - before} \n")
 
 
 def test_tdd():
     from pprint import pprint
+
     print = pprint
     from code import UneClasse
 
     loader = Loader()
     loader.loadMethodFromClass(UneClasse)
 
-    assert list(loader.methodnames) == ['UneClasse.uncalcul']
+    assert list(loader.methodnames) == ["UneClasse.uncalcul"]
     import code
-    assert loader.getClassesFromModule(code) == [('UneClasse', UneClasse)]
-    assert loader.getCallablesFromModule(code) == [('UneClasse', UneClasse), ('mafonction', code.mafonction)]
-    loader.loadModule(code)
-    assert sorted(loader._callables) == sorted([('code.UneClasse', code.UneClasse), 
-                                                ('code.mafonction', code.mafonction), 
-                                                ('code.UneClasse.uncalcul', UneClasse.uncalcul )])
-    
 
-    
-    loader.discover(['some']) # ['.'] is buggy
+    assert loader.getClassesFromModule(code) == [("UneClasse", UneClasse)]
+    assert loader.getCallablesFromModule(code) == [
+        ("UneClasse", UneClasse),
+        ("mafonction", code.mafonction),
+    ]
+    loader.loadModule(code)
+    assert sorted(loader._callables) == sorted(
+        [
+            ("code.UneClasse", code.UneClasse),
+            ("code.mafonction", code.mafonction),
+            ("code.UneClasse.uncalcul", UneClasse.uncalcul),
+        ]
+    )
+
+    loader.discover(["some"])  # ['.'] is buggy
     print("Callables")
     print(loader._callables)
     print("End")
-    #Todo
-    wanted_names = ['some.somecode.somefunction', 'some.somecode.SomeClass', 'some.somecode.SomeClass.method', 'some.pack.Pack',
-                    'code.UneClasse.uncalcul', 'code.mafonction', 'code.UneClasse']
-    
+    # Todo
+    wanted_names = [
+        "some.somecode.somefunction",
+        "some.somecode.SomeClass",
+        "some.somecode.SomeClass.method",
+        "some.pack.Pack",
+        "code.UneClasse.uncalcul",
+        "code.mafonction",
+        "code.UneClasse",
+    ]
+
     found = [x[0] for x in loader._callables]
     for name in wanted_names:
         assert name in found
         found.remove(name)
 
     assert found == []
-    
+
     '''
 
 
@@ -517,9 +530,6 @@ def test_tdd():
         else:
             return None, False
         '''
-
-
-
 
 
 """
