@@ -38,6 +38,10 @@ import inspect
 from typing import List, Dict
 
 
+builtins = [
+    getattr(__builtins__, x) for x in dir(__builtins__)
+]  # not all builtins are hashable
+
 # Simple code reporter for dev, this would be a persitent thing.
 code_report = defaultdict(list)
 mon_rapport = defaultdict(list)
@@ -60,6 +64,14 @@ def sonder_module(nom_module: str):
     elements_names = listattr(module)
     for name in elements_names:
         element = getattr(module, name)
+
+        if element in builtins:
+            print(f"Skipping {name} since it's a builtin")
+            continue
+
+        if getattr(__builtins__, name, None) == element:
+            continue
+
         if callable(element):
             print(f"{element} est callable on l'ajoute")
             sondee = sonder_vers(code_report)(element)
@@ -71,6 +83,7 @@ def sonder_module(nom_module: str):
             for name in attributes:
                 target = getattr(element, name)
                 if callable(target):
+
                     sondee = sonder_vers(code_report)(target)
                     setattr(element, name, sondee)
 
@@ -112,7 +125,7 @@ if __name__ == "__main__":
     print("*" * 80)
     from pprint import pprint
 
-    pprint(inspect.getmembers(UneClasse))
+    # pprint(inspect.getmembers(UneClasse))
     print("*" * 80)
 
     print(pformat(dict(code_report)))
