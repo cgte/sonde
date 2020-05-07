@@ -50,7 +50,7 @@ class Loader(object):
 
     def getClassesFromModule(self, module, pattern=None):
         """Return a suite of all test cases contained in the given module"""
-
+        self._modules.add(module.__name__)
         classes = []
         for name in dir(module):
             obj = getattr(module, name)
@@ -66,7 +66,7 @@ class Loader(object):
 
     def getCallablesFromModule(self, module, pattern=None):
         """Return a suite of all test cases contained in the given module"""
-
+        self._modules.add(module.__name__)
         callables = []
         for name in dir(module):
 
@@ -74,7 +74,7 @@ class Loader(object):
             if callable(obj):
                 if obj.__module__ not in self._modules:
                     print(
-                        f"Skipping {obj} since {obj.__module__} is not in the monitored modules"
+                        f"Skipping {obj} since {obj.__module__} is not in the monitored modules {self._modules}"
                     )
                     continue
                 if __builtins__.get(obj.__name__, None) == obj:
@@ -117,19 +117,15 @@ class Loader(object):
             print(f"Found : {module}")
 
             if finder.path and finder.path != ".":
-                module = f"{finder.path}.{module}"
-
-            try:
+                module_path = f"{finder.path}.{module}"
+                try:
+                    module_obj = import_module(module_path)
+                except Exception as exc:
+                    print(f"Could not import {module_path}")
+                    module_obj = import_module(module)
+                    print(f"import succeded with {module}")
+            else:
                 module_obj = import_module(module)
-            except Exception as exc:
-                print(exc)
-                import ipdb
-
-                ipdb.set_trace()
-                raise exc
-                pass
-                pass
-            pass
 
             self.loadModule(module_obj)
 
