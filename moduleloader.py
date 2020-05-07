@@ -220,6 +220,7 @@ def test_tdd_discover_current_dir():
         assert name in found
         found.remove(name)
     print(found, "remaining")
+    assert found == []
 
     '''
 
