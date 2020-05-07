@@ -72,6 +72,11 @@ class Loader(object):
 
             obj = getattr(module, name)
             if callable(obj):
+                if obj.__module__ not in self._modules:
+                    print(
+                        f"Skipping {obj} since {obj.__module__} is not in the monitored modules"
+                    )
+                    continue
                 if __builtins__.get(obj.__name__, None) == obj:
                     continue
                 if pattern is None:
@@ -111,15 +116,17 @@ class Loader(object):
 
             print(f"Found : {module}")
 
-            if finder.path:
+            if finder.path and finder.path != ".":
                 module = f"{finder.path}.{module}"
 
             try:
                 module_obj = import_module(module)
-            except:
+            except Exception as exc:
+                print(exc)
                 import ipdb
 
                 ipdb.set_trace()
+                raise exc
                 pass
                 pass
             pass
@@ -176,6 +183,8 @@ def test_tdd():
         found.remove(name)
 
     assert found == []
+
+    loader.discover(["."])  # ['.'] is buggy
 
     '''
 
