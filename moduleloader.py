@@ -22,6 +22,7 @@ class Loader(object):
 
         # Internals variables to be removed as long as i convert code
         self._methodnames = set()
+        self._callables = set()
 
     @property
     def methodnames(self):
@@ -46,10 +47,7 @@ class Loader(object):
                     res.append((method.__qualname__, method))
         return res
 
-
-
-
-    def loadClassFromModule(self, module, pattern=None):
+    def getClassesFromModule(self, module, pattern=None):
         """Return a suite of all test cases contained in the given module"""
 
         classes = []
@@ -59,11 +57,44 @@ class Loader(object):
                 if __builtins__.get(obj.__name__, None) == obj:
                     continue
                 if  pattern is None:
-                    classes.append(obj) 
+                    classes.append((obj.__qualname__, obj))
                 else:
                     raise NotImplementedError("Not implemented yet") 
                     #Maybe we only want to probe some kind of functions 
         return classes
+    
+    def getCallablesFromModule(self, module, pattern=None):
+        """Return a suite of all test cases contained in the given module"""
+
+        callables = []
+        for name in dir(module):
+            
+            obj = getattr(module, name)
+            if callable(obj):
+                if __builtins__.get(obj.__name__, None) == obj:
+                    continue
+                if  pattern is None:
+                    callables.append((obj.__qualname__, obj)) 
+                else:
+                    raise NotImplementedError("Not implemented yet") 
+                    #Maybe we only want to probe some kind of functions 
+        return callables
+
+    def loadModule(self, module):
+        modname = module.__name__
+
+        #TODO: load callables
+        for name, callable_ in self.getCallablesFromModule(module):
+            self._callables.add((f"{modname}.{name}", callable_))
+
+        #TODO: load classes method 
+        for _, class_ in self.getClassesFromModule(module):
+            for qmethodname, method in self.getMethodsFromClass(class_):
+                self._callables.add((f"{modname}.{qmethodname}", method))
+
+
+
+         
 
 
 def test_tdd():
@@ -74,9 +105,13 @@ def test_tdd():
 
     assert list(loader.methodnames) == ['UneClasse.uncalcul']
     import code
-    assert loader.loadClassFromModule(code) == [UneClasse]
-
-
+    assert loader.getClassesFromModule(code) == [('UneClasse', UneClasse)]
+    assert loader.getCallablesFromModule(code) == [('UneClasse', UneClasse), ('mafonction', code.mafonction)]
+    loader.loadModule(code)
+    assert sorted(loader._callables) == sorted([('code.UneClasse', code.UneClasse), 
+                                                ('code.mafonction', code.mafonction), 
+                                                ('code.UneClasse.uncalcul', UneClasse.uncalcul )])
+                                                
     '''
 
 
