@@ -103,6 +103,12 @@ moninstance = UneClasse(1)
 moninstance.uncalcul(3)
 
 
+print("*" * 80)
+from pprint import pprint
+
+pprint(inspect.getmembers(UneClasse))
+print("*" * 80)
+
 print(pformat(dict(code_report)))
 
 

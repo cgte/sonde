@@ -1,3 +1,6 @@
+built = list
+
+
 def mafonction(a, b):
     """ Une fonction simple qui renvoie la somme """
 

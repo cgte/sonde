@@ -5,7 +5,7 @@ This is copy-paste-strip from unitest.loader
 """
 import types
 import functools
-
+import inspect
 
 class Loader(object):
     """
@@ -49,6 +49,21 @@ class Loader(object):
 
 
 
+    def loadClassFromModule(self, module, pattern=None):
+        """Return a suite of all test cases contained in the given module"""
+
+        classes = []
+        for name in dir(module):
+            obj = getattr(module, name)
+            if isinstance(obj, type):
+                if __builtins__.get(obj.__name__, None) == obj:
+                    continue
+                if  pattern is None:
+                    classes.append(obj) 
+                else:
+                    raise NotImplementedError("Not implemented yet") 
+                    #Maybe we only want to probe some kind of functions 
+        return classes
 
 
 def test_tdd():
@@ -58,11 +73,12 @@ def test_tdd():
     loader.loadMethodFromClass(UneClasse)
 
     assert list(loader.methodnames) == ['UneClasse.uncalcul']
+    import code
+    assert loader.loadClassFromModule(code) == [UneClasse]
 
 
     '''
-    # XXX After Python 3.5, remove backward compatibility hacks for
-    # use_load_tests deprecation via *args and **kws.  See issue 16662.
+
 
     def loadClassFromName(self, name, module=None):
         """Return a suite of all test cases given a string specifier.
