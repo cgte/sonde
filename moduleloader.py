@@ -92,12 +92,36 @@ class Loader(object):
             for qmethodname, method in self.getMethodsFromClass(class_):
                 self._callables.add((f"{modname}.{qmethodname}", method))
 
+    def discover(self, targets: list):
+        print("\n")
+        from importlib import import_module
+        from pkgutil import walk_packages
+        from copy import copy
 
+        modules = list(walk_packages(targets))
+        
+        for module in modules:
+            before = copy(self._callables)
+
+            print(f"Found : {module}")
+            if module.ispkg:
+                module_path = f"{module.module_finder.path}.{module.name}"
+                module_obj = import_module(module_path)
+                print(f"processing {module_obj}")
+            else:
+                print(f"Not processing {module} now ")
+                continue
+            
+            self.loadModule(module_obj)
+            
+            print(f"\nadded {self._callables - before} \n")
 
          
 
 
 def test_tdd():
+    from pprint import pprint
+    print = pprint
     from code import UneClasse
 
     loader = Loader()
@@ -111,7 +135,18 @@ def test_tdd():
     assert sorted(loader._callables) == sorted([('code.UneClasse', code.UneClasse), 
                                                 ('code.mafonction', code.mafonction), 
                                                 ('code.UneClasse.uncalcul', UneClasse.uncalcul )])
-                                                
+    
+
+    loader.discover(['some'])
+    print("Callables")
+    print(loader._callables)
+    print("End")
+    #Todo
+    wanted_names = ['some.somecode.somefunction', 'some.somecode.Someclass', 'some.somecode.Someclass.method', 'some.pack.Pack']
+    found = [x[0] for x in loader._callables]
+    for name in wanted_names:
+        print( name in found)
+    print(found)
     '''
 
 
