@@ -49,7 +49,7 @@ def sonder_module(nom_module: str):
                     setattr(element, name, sondee)
 
 
-def sonder_vers(report: Dict[List]):
+def sonder_vers(report: Dict[tuple, list]):
     """Probe call and record into adictionary """
 
     def ajouter_sonde(func: callable):
