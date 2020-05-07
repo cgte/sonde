@@ -17,12 +17,13 @@ class Loader(object):
 
     def __init__(self):
         super(Loader, self).__init__()
-        self.errors = []        
+        self.errors = []
         self._loading_packages = set()
 
         # Internals variables to be removed as long as i convert code
         self._methodnames = set()
         self._callables = set()
+        self._modules = set()
 
     @property
     def methodnames(self):
@@ -99,7 +100,12 @@ class Loader(object):
         from copy import copy
 
         modules = list(walk_packages(targets))
-        
+        found = set()
+        for _, module, _ in modules:
+            found.add(module)
+        self._modules.update(found)
+        print(f"found {sorted(found)} while scanning {targets}")
+
         for finder, module, ispkg in modules:
             before = copy(self._callables)
 
