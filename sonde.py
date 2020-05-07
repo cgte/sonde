@@ -10,6 +10,7 @@ from importlib import import_module
 from collections import defaultdict
 from pprint import pformat
 import inspect
+from typing import List, Dict
 
 code_report = defaultdict(list)  # Simple code reporter for dev
 
@@ -22,6 +23,7 @@ def listattr(something):
 def sonder_module(nom_module: str):
     """ This functions scans a module for callables:
         will patch them so as to record I/O for later use
+    Should be done like in unitest discover ? so as to patch everything.
     """
     print(f"import de {nom_module}")
     module = import_module(nom_module)
@@ -45,7 +47,9 @@ def sonder_module(nom_module: str):
                     setattr(element, name, sondee)
 
 
-def sonder_vers(report: dict):
+def sonder_vers(report: Dict[List]):
+    """Probe call and record into adictionary """
+
     def ajouter_sonde(func: callable):
         @wraps(func)
         def sondee(*args, **kwargs):
