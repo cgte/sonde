@@ -40,6 +40,7 @@ from typing import List, Dict
 
 # Simple code reporter for dev, this would be a persitent thing.
 code_report = defaultdict(list)
+mon_rapport = defaultdict(list)
 
 
 def listattr(something):
@@ -94,33 +95,29 @@ def sonder_vers(report: Dict[tuple, list]):
     return ajouter_sonde
 
 
-sonder_module("code")
-
-from code import mafonction, UneClasse
-
-mafonction(1, 2)
-moninstance = UneClasse(1)
-moninstance.uncalcul(3)
-
-
-print("*" * 80)
-from pprint import pprint
-
-pprint(inspect.getmembers(UneClasse))
-print("*" * 80)
-
-print(pformat(dict(code_report)))
-
-
-mon_rapport = defaultdict(list)
-
-
 @sonder_vers(mon_rapport)
 def somme(a, b, c):
     return a + b + c
 
 
-somme(1, 2, 3)
-somme(1, c=2, b=2)
+if __name__ == "__main__":
+    sonder_module("code")
 
-print(pformat(dict(mon_rapport)))
+    from code import mafonction, UneClasse
+
+    mafonction(1, 2)
+    moninstance = UneClasse(1)
+    moninstance.uncalcul(3)
+
+    print("*" * 80)
+    from pprint import pprint
+
+    pprint(inspect.getmembers(UneClasse))
+    print("*" * 80)
+
+    print(pformat(dict(code_report)))
+
+    somme(1, 2, 3)
+    somme(1, c=2, b=2)
+
+    print(pformat(dict(mon_rapport)))
