@@ -1,3 +1,3 @@
 run:
-	python3 sonde.py
+	python3 prober.py
 

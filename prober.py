@@ -3,6 +3,31 @@ La sonde va aller inspecter, importer et modifier a la volée un certain nombre 
 
 Use case: we have code with no test. What we want is to probe the code for later unittest/pytest generation
 
+    >>> def sumfun(a, b):
+    ...     return a + b
+
+    >>> def record_to(recorder):
+    ...     def probe_function(function_to_probe):
+    ...         def probed_function(*args, **kwargs):
+    ...             res = function_to_probe(*args, **kwargs)
+    ...             qname = function_to_probe.__qualname__
+    ...             recorder[(qname, args, str(kwargs))].append(res)
+    ...             return res
+    ...         return probed_function
+    ...     return probe_function
+
+    >>> record = defaultdict(list)
+    >>> function_prober = record_to(record)
+    >>> sumfun = function_prober(sumfun)
+    >>> sumfun(1,2)
+    3
+    >>> sumfun('a' , 'b')
+    'ab'
+    >>> dict(record)
+    {('sumfun', (1, 2), '{}'): [3], ('sumfun', ('a', 'b'), '{}'): ['ab']}
+    >>> import json
+    >>> json.dumps(record)
+
 """
 
 from functools import wraps
