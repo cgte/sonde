@@ -114,7 +114,7 @@ class Loader(object):
         for finder, module, ispkg in modules:
             before = copy(self._callables)
 
-            print(f"Found : {module}")
+            print(f"processing: {module}")
 
             if finder.path and finder.path != ".":
                 module_path = f"{finder.path}.{module}"
@@ -175,9 +175,6 @@ def test_tdd_discover_given_dir():
         "some.somecode.SomeClass",
         "some.somecode.SomeClass.method",
         "some.pack.Pack",
-        "code.UneClasse.uncalcul",
-        "code.mafonction",
-        "code.UneClasse",
     ]
 
     found = [x[0] for x in loader._callables]
@@ -191,6 +188,20 @@ def test_tdd_discover_given_dir():
 def test_tdd_discover_current_dir():
     loader = Loader()
     loader.discover(["."])
+    expected = [
+        "some.somecode.somefunction",
+        "some.somecode.SomeClass",
+        "some.somecode.SomeClass.method",
+        "some.pack.Pack",
+        "code.UneClasse.uncalcul",
+        "code.mafonction",
+        "code.UneClasse",
+    ]
+    found = [x[0] for x in loader._callables]
+    for name in expected:
+        assert name in found
+        found.remove(name)
+    print(found, "remaining")
 
     '''
 
