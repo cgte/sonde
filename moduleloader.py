@@ -1,4 +1,4 @@
-"""Loads available python modules from directory 
+"""Loads available python modules from directory
 This is copy-paste-strip from unitest.loader
 
 
@@ -7,22 +7,22 @@ import types
 import functools
 import inspect
 
+
 class Loader(object):
     """
     This class is responsible for loading callables according to various criteria
     and returning them in a list
     """
 
-    _top_level_dir = None
-
     def __init__(self):
         super(Loader, self).__init__()
-        self.errors = []        
+        self.errors = []
         self._loading_packages = set()
 
         # Internals variables to be removed as long as i convert code
         self._methodnames = set()
         self._callables = set()
+        self._modules = set()
 
     @property
     def methodnames(self):
@@ -34,130 +34,194 @@ class Loader(object):
         methods = self.getMethodsFromClass(class_)
         for name, method in methods:
             self._methodnames.add(name)
-        
-        return methods 
 
-    
+        return methods
+
     def getMethodsFromClass(self, class_):
         res = []
         for methodname in dir(class_):
-            if not methodname.startswith('__'):
+            if not methodname.startswith("__"):
                 method = getattr(class_, methodname)
                 if callable(method):
-                    res.append((method.__qualname__, method))
+                    qname = method.__qualname__
+                    print(f"adding {qname}")
+                    if "dict" in qname:
+                        import ipdb
+
+                        ipdb.set_trace()
+                    res.append((qname, method))
         return res
 
     def getClassesFromModule(self, module, pattern=None):
         """Return a suite of all test cases contained in the given module"""
 
+        self._modules.add(module.__name__)
         classes = []
         for name in dir(module):
             obj = getattr(module, name)
             if isinstance(obj, type):
                 if __builtins__.get(obj.__name__, None) == obj:
                     continue
-                if  pattern is None:
+                if obj.__module__ not in self._modules:
+                    print(
+                        f"Skipping {obj} since {obj.__module__} is not in the monitored modules {self._modules}"
+                    )
+                    continue
+                if pattern is None:
+
                     classes.append((obj.__qualname__, obj))
                 else:
-                    raise NotImplementedError("Not implemented yet") 
-                    #Maybe we only want to probe some kind of functions 
+                    raise NotImplementedError("Not implemented yet")
+                    # Maybe we only want to probe some kind of functions
         return classes
-    
+
     def getCallablesFromModule(self, module, pattern=None):
         """Return a suite of all test cases contained in the given module"""
-
+        self._modules.add(module.__name__)
         callables = []
         for name in dir(module):
-            
+
             obj = getattr(module, name)
             if callable(obj):
+                if obj.__module__ not in self._modules:
+                    print(
+                        f"Skipping {obj} since {obj.__module__} is not in the monitored modules {self._modules}"
+                    )
+                    continue
                 if __builtins__.get(obj.__name__, None) == obj:
                     continue
-                if  pattern is None:
-                    callables.append((obj.__qualname__, obj)) 
+                if pattern is None:
+                    print(f"adding {obj.__qualname__}")
+                    callables.append((obj.__qualname__, obj))
                 else:
-                    raise NotImplementedError("Not implemented yet") 
-                    #Maybe we only want to probe some kind of functions 
+                    raise NotImplementedError("Not implemented yet")
+                    # Maybe we only want to probe some kind of functions
         return callables
 
     def loadModule(self, module):
         modname = module.__name__
 
-        #TODO: load callables
+        # TODO: load callables
         for name, callable_ in self.getCallablesFromModule(module):
             self._callables.add((f"{modname}.{name}", callable_))
 
-        #TODO: load classes method 
+        # TODO: load classes method
         for _, class_ in self.getClassesFromModule(module):
             for qmethodname, method in self.getMethodsFromClass(class_):
                 self._callables.add((f"{modname}.{qmethodname}", method))
 
-    def discover(self, targets: list, exclude: list=[]):
+    def discover(self, targets: list, exclude: list = []):
         print("\n")
         from importlib import import_module
         from pkgutil import walk_packages
         from copy import copy
 
         modules = list(walk_packages(targets))
-        
+        found = set()
+        for _, module, _ in modules:
+            found.add(module)
+        self._modules.update(found)
+        print(f"found {sorted(found)} while scanning {targets}")
+
         for finder, module, ispkg in modules:
             before = copy(self._callables)
+            if module == __name__:
+                # Do not instrospect self
+                continue
+            print(f"processing: {module}")
 
-            print(f"Found : {module}")
-            
-            if finder.path:
-                module = f'{finder.path}.{module}'
-
-            try:
+            if finder.path and finder.path != ".":
+                module_path = f"{finder.path}.{module}"
+                try:
+                    module_obj = import_module(module_path)
+                except Exception as exc:
+                    print(f"Could not import {module_path}")
+                    module_obj = import_module(module)
+                    print(f"import succeded with {module}")
+            else:
                 module_obj = import_module(module)
-            except:
-                import ipdb; ipdb.set_trace()
-                pass
-                pass
-            pass
-            
-            
+
             self.loadModule(module_obj)
-            
+
             print(f"\nadded {self._callables - before} \n")
 
-         
+
+from pprint import pprint
 
 
-def test_tdd():
-    from pprint import pprint
+def test_tdd_base():
+
     print = pprint
     from code import UneClasse
 
     loader = Loader()
     loader.loadMethodFromClass(UneClasse)
 
-    assert list(loader.methodnames) == ['UneClasse.uncalcul']
+    assert list(loader.methodnames) == ["UneClasse.uncalcul"]
     import code
-    assert loader.getClassesFromModule(code) == [('UneClasse', UneClasse)]
-    assert loader.getCallablesFromModule(code) == [('UneClasse', UneClasse), ('mafonction', code.mafonction)]
-    loader.loadModule(code)
-    assert sorted(loader._callables) == sorted([('code.UneClasse', code.UneClasse), 
-                                                ('code.mafonction', code.mafonction), 
-                                                ('code.UneClasse.uncalcul', UneClasse.uncalcul )])
-    
 
-    
-    loader.discover(['some']) # ['.'] is buggy
+    assert loader.getClassesFromModule(code) == [("UneClasse", UneClasse)]
+    assert loader.getCallablesFromModule(code) == [
+        ("UneClasse", UneClasse),
+        ("mafonction", code.mafonction),
+    ]
+    loader.loadModule(code)
+    assert sorted(loader._callables) == sorted(
+        [
+            ("code.UneClasse", code.UneClasse),
+            ("code.mafonction", code.mafonction),
+            ("code.UneClasse.uncalcul", UneClasse.uncalcul),
+        ]
+    )
+
+
+def test_tdd_discover_given_dir():
+
+    loader = Loader()
+
+    loader.discover(["some"])  # ['.'] is buggy
     print("Callables")
     print(loader._callables)
     print("End")
-    #Todo
-    wanted_names = ['some.somecode.somefunction', 'some.somecode.SomeClass', 'some.somecode.SomeClass.method', 'some.pack.Pack',
-                    'code.UneClasse.uncalcul', 'code.mafonction', 'code.UneClasse']
-    
+    # Todo
+    wanted_names = [
+        "some.somecode.somefunction",
+        "some.somecode.SomeClass",
+        "some.somecode.SomeClass.method",
+        "some.pack.Pack",
+    ]
+
     found = [x[0] for x in loader._callables]
     for name in wanted_names:
         assert name in found
         found.remove(name)
 
     assert found == []
-    
+
+
+def test_tdd_discover_current_dir():
+    loader = Loader()
+    loader.discover(["."])
+    expected = [
+        "some.somecode.somefunction",
+        "some.somecode.SomeClass",
+        "some.somecode.SomeClass.method",
+        "some.pack.Pack",
+        "code.UneClasse.uncalcul",
+        "code.mafonction",
+        "code.UneClasse",
+        "prober.sonder_module",
+        "prober.sonder_vers",
+        "prober.somme",
+        "prober.listattr",
+    ]
+    found = [x[0] for x in loader._callables]
+    for name in expected:
+        assert name in found
+        found.remove(name)
+    print(found, "remaining")
+    assert found == []
+
     '''
 
 
@@ -511,9 +575,6 @@ def test_tdd():
         else:
             return None, False
         '''
-
-
-
 
 
 """
